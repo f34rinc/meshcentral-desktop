@@ -9,9 +9,10 @@ original build dates. Versions 2.0.0 to 2.7.x were never packaged and are listed
 
 ## [Unreleased]
 ### Added
-- Devices: a title-bar button hides the device list, so a device page (the remote desktop) gets the whole
-  window width without fullscreen. The choice is remembered (`devices_list_hidden`), leaving fullscreen
-  keeps it, and the remote screen refits to the new width.
+- Devices: a title-bar button hides the device list while a device is open, so its page (the remote
+  desktop) gets the whole window width without fullscreen. With no device open (after sign-in, or when the
+  device is closed) the list shows, so there is always something to pick from. The choice is remembered
+  (`devices_list_hidden`), leaving fullscreen keeps it, and the remote screen refits to the new width.
 
 ## [3.0.6] - 2026-10-22
 ### Fixed
