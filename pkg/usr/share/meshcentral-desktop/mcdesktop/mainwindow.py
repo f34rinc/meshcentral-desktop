@@ -122,6 +122,12 @@ class MainWindow(Gtk.ApplicationWindow):
         self.refresh_btn.set_tooltip_text("Refresh devices")
         self.refresh_btn.connect("clicked", lambda *_: self.load_devices())
         hb.pack_start(self.refresh_btn)
+        # hide the device list so a device page (the remote desktop) gets the full width without fullscreen
+        self.list_btn = Gtk.ToggleButton(active=not app.config.get("devices_list_hidden", False))
+        self.list_btn.set_image(Gtk.Image.new_from_icon_name("sidebar-show-symbolic", Gtk.IconSize.BUTTON))
+        self.list_btn.set_tooltip_text("Show or hide the device list")
+        self.list_btn.connect("toggled", lambda b: self._set_list_visible(b.get_active()))
+        hb.pack_start(self.list_btn)
         menu_btn = Gtk.MenuButton()
         menu_btn.set_image(Gtk.Image.new_from_icon_name("open-menu-symbolic", Gtk.IconSize.BUTTON))
         menu_btn.set_popover(self._app_menu())
@@ -170,8 +176,20 @@ class MainWindow(Gtk.ApplicationWindow):
         self._theme_sig = Gtk.Settings.get_default().connect(
             "notify::gtk-application-prefer-dark-theme", lambda *_: GLib.idle_add(self._on_server_icons))
         self.show_all()
+        self.paned.get_child1().set_visible(self.list_btn.get_active())
         self.content.set_visible_child_name("empty")
         self.load_devices()
+
+    def _set_list_visible(self, visible):
+        """Device list on / off (remembered). Fullscreen hides it anyway and restores this choice."""
+        if getattr(self, "_desk_fs", False):
+            return
+        self.paned.get_child1().set_visible(visible)
+        self.app.config["devices_list_hidden"] = not visible
+        self.app.save_config()
+        panel = self._current_desktop_panel()
+        if panel is not None and hasattr(panel, "refit_soon"):
+            panel.refit_soon()
 
     # ---- sidebar -----------------------------------------------------------
     def _build_sidebar(self):
@@ -433,6 +451,7 @@ class MainWindow(Gtk.ApplicationWindow):
         on_devices = pid == "devices"
         self.search.set_visible(on_devices)
         self.refresh_btn.set_visible(on_devices)
+        self.list_btn.set_visible(on_devices)
 
     def _name_cell(self, _c, cell, model, it, _d):
         name, sub = model[it][1], model[it][2]
@@ -690,7 +709,7 @@ class MainWindow(Gtk.ApplicationWindow):
         self.unfullscreen()
         sidebar = self.paned.get_child1()
         if sidebar is not None:
-            sidebar.show()
+            sidebar.set_visible(self.list_btn.get_active())
         for w in (self.rail, self.rail_sep, self.action_bar, self.group_bar):
             w.show()
         self._group_nbs["remote"].set_show_tabs(True)
